@@ -1,0 +1,60 @@
+version: '3.7'
+services:
+  database:
+    image: mysql:5.7
+    environment:
+      - MYSQL_ROOT_PASSWORD=root
+      - MYSQL_ALLOW_EMPTY_PASSWORD=true
+      - MYSQL_USER=todo
+      - MYSQL_PASSWORD=todo
+      - MYSQL_DATABASE=todo
+    networks:
+      - backend-net
+    volumes:
+      - persistance:/var/lib/mysql
+
+  backend:
+    container_name: todo-backend
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    image: todo-backend
+    depends_on:
+      - database
+    environment:
+      - DATABASE_URL=jdbc:mysql://database/todo
+      - DATABASE_PASSWORD=todo
+      - DATABASE_USERNAME=todo
+    networks:
+      - frontend-net
+      - backend-net
+    volumes:
+      - maven-dependencies:/root/.m2
+    ports:
+      - 8080:8080
+
+  frontend:
+    container_name: todo-frontend
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+      args:
+        - REACT_APP_BACKEND=http://127.0.0.1:8080
+    image: todo_frontend
+    depends_on:
+      - backend
+    networks:
+      - frontend-net
+    ports:
+      - 3000:80
+    volumes:
+      - /frontend/.:/app
+      - node-modules:/app/node_modules
+
+networks:
+  frontend-net:
+  backend-net:
+volumes:
+  persistance:
+  node-modules:
+  maven-dependencies:
